@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Image Carousel</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Inconsolata:wght@300;400&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111;
+      --accent: #c9a96e;
+      --text: #e8e0d4;
+      --muted: #555;
+      --radius: 2px;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      font-family: 'Inconsolata', monospace;
+      overflow: hidden;
+    }
+
+    .carousel-wrapper {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    /* Track */
+    .track {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transform: translateX(60px);
+      transition: opacity 0.6s cubic-bezier(0.4,0,0.2,1), transform 0.6s cubic-bezier(0.4,0,0.2,1);
+      pointer-events: none;
+    }
+
+    .slide.active {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: all;
+    }
+
+    .slide.exit-left {
+      opacity: 0;
+      transform: translateX(-60px);
+    }
+
+    .slide img {
+      max-width: 80vw;
+      max-height: 75vh;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      display: block;
+      border: 1px solid #222;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.7), 0 0 0 1px #1a1a1a;
+      border-radius: var(--radius);
+    }
+
+    /* Caption */
+    .caption {
+      position: absolute;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      transition: opacity 0.4s;
+    }
+
+    .caption .title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 15px;
+      font-weight: 300;
+      color: var(--text);
+      letter-spacing: 0.08em;
+      text-transform: none;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    /* Controls */
+    .controls {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .btn {
+      background: none;
+      border: 1px solid #2a2a2a;
+      color: var(--muted);
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+    }
+
+    .btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(201,169,110,0.07);
+    }
+
+    .dots {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--muted);
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s;
+      border: none;
+    }
+
+    .dot.active {
+      background: var(--accent);
+      transform: scale(1.5);
+    }
+
+    /* Counter */
+    .counter {
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+    }
+
+    .counter span { color: var(--accent); }
+
+    /* Placeholder slide styles */
+    .placeholder {
+      width: clamp(280px, 60vw, 640px);
+      height: clamp(180px, 45vh, 400px);
+      background: #131313;
+      border: 1px dashed #2a2a2a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      border-radius: var(--radius);
+      color: #333;
+    }
+
+    .placeholder .icon {
+      font-size: 32px;
+      opacity: 0.4;
+    }
+
+    .placeholder .label {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      color: #333;
+      font-weight: 300;
+    }
+
+    .placeholder .sub {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #2a2a2a;
+    }
+
+    /* Autoplay bar */
+    .progress-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 2px;
+      background: var(--accent);
+      width: 0%;
+      opacity: 0.6;
+      transition: width linear;
+    }
+  </style>
+</head>
+<body>
+
+<div class="carousel-wrapper">
+  <div class="track" id="track">
+
+    <!-- SLIDE 1 — replace src with your image URL -->
+    <div class="slide active" data-caption="Your first image caption">
+      <div class="placeholder">
+        <div class="icon">🖼</div>
+        <div class="label">Slide One</div>
+        <div class="sub">Replace with your image</div>
+      </div>
+      <!-- To use a real image, replace the placeholder div above with:
+      <img src="https://your-image-url.com/image1.jpg" alt="Slide 1" /> -->
+    </div>
+
+    <!-- SLIDE 2 -->
+    <div class="slide" data-caption="Your second image caption">
+      <div class="placeholder">
+        <div class="icon">🖼</div>
+        <div class="label">Slide Two</div>
+        <div class="sub">Replace with your image</div>
+      </div>
+    </div>
+
+    <!-- SLIDE 3 -->
+    <div class="slide" data-caption="Your third image caption">
+      <div class="placeholder">
+        <div class="icon">🖼</div>
+        <div class="label">Slide Three</div>
+        <div class="sub">Replace with your image</div>
+      </div>
+    </div>
+
+    <!-- SLIDE 4 -->
+    <div class="slide" data-caption="Your fourth image caption">
+      <div class="placeholder">
+        <div class="icon">🖼</div>
+        <div class="label">Slide Four</div>
+        <div class="sub">Replace with your image</div>
+      </div>
+    </div>
+
+    <!-- ADD MORE SLIDES by copying one of the blocks above -->
+
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <!-- Counter -->
+  <div class="counter"><span id="currentNum">1</span> / <span id="totalNum">4</span></div>
+
+  <!-- Caption -->
+  <div class="caption">
+    <span class="title" id="captionText">Your first image caption</span>
+    <span id="captionSub">looker studio embed</span>
+  </div>
+
+  <!-- Navigation -->
+  <div class="controls">
+    <button class="btn" id="prevBtn" aria-label="Previous">&#8592;</button>
+    <div class="dots" id="dots"></div>
+    <button class="btn" id="nextBtn" aria-label="Next">&#8594;</button>
+  </div>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const dots = document.getElementById('dots');
+  const captionText = document.getElementById('captionText');
+  const currentNum = document.getElementById('currentNum');
+  const totalNum = document.getElementById('totalNum');
+  const progressBar = document.getElementById('progressBar');
+  const AUTOPLAY_MS = 4000;
+
+  let current = 0;
+  let autoplayTimer = null;
+  let progressTimer = null;
+
+  totalNum.textContent = slides.length;
+
+  // Build dots
+  slides.forEach((_, i) => {
+    const d = document.createElement('button');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.setAttribute('aria-label', `Go to slide ${i+1}`);
+    d.addEventListener('click', () => goTo(i));
+    dots.appendChild(d);
+  });
+
+  function goTo(index, dir = 1) {
+    slides[current].classList.remove('active');
+    slides[current].classList.add(dir >= 0 ? 'exit-left' : 'exit-right');
+    setTimeout(() => slides[current < slides.length ? current : 0].classList.remove('exit-left', 'exit-right'), 600);
+
+    const prev = current;
+    current = (index + slides.length) % slides.length;
+
+    slides[current].style.transform = dir >= 0 ? 'translateX(60px)' : 'translateX(-60px)';
+    slides[current].style.opacity = '0';
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        slides[current].classList.add('active');
+        slides[current].style.transform = '';
+        slides[current].style.opacity = '';
+      });
+    });
+
+    // Update dots
+    document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === current));
+    captionText.textContent = slides[current].dataset.caption || '';
+    currentNum.textContent = current + 1;
+
+    startProgress();
+  }
+
+  function startProgress() {
+    clearTimeout(autoplayTimer);
+    clearTimeout(progressTimer);
+    progressBar.style.transition = 'none';
+    progressBar.style.width = '0%';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        progressBar.style.transition = `width ${AUTOPLAY_MS}ms linear`;
+        progressBar.style.width = '100%';
+      });
+    });
+    autoplayTimer = setTimeout(() => goTo(current + 1, 1), AUTOPLAY_MS);
+  }
+
+  document.getElementById('prevBtn').addEventListener('click', () => goTo(current - 1, -1));
+  document.getElementById('nextBtn').addEventListener('click', () => goTo(current + 1, 1));
+
+  // Keyboard navigation
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft') goTo(current - 1, -1);
+    if (e.key === 'ArrowRight') goTo(current + 1, 1);
+  });
+
+  // Start autoplay
+  startProgress();
+</script>
+
+</body>
+</html>
